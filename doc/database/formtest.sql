@@ -20,7 +20,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
 DROP TABLE IF EXISTS `formtest`;
 CREATE TABLE `formtest` (
-  `formId` int(11) DEFAULT NULL,
+  `formId` varchar(36) DEFAULT NULL,
   `formType` varchar(50) DEFAULT NULL,
   `form` blob
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

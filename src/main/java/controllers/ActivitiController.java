@@ -2,6 +2,8 @@ package controllers;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -382,79 +384,95 @@ public class ActivitiController {
 	public Object startProcess1(HttpServletRequest req)
 			throws XMLStreamException {
 		Map<String, String[]> formMap = req.getParameterMap();
-		String deploymentId = formMap.get("deploymentId")[0];
+		String procDefId = formMap.get("procDefId")[0];
+		try {
+			procDefId = URLDecoder.decode(procDefId, "utf-8");
+			procDefId = procDefId.replace("=", "");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		ProcessInstance processInstance1 = runtimeService.startProcessInstanceById(procDefId);
+		List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance1.getId()).orderByTaskCreateTime().desc().list();
+		Task task = tasks.get(0);
+		taskService.claim(task.getId(), (String) req.getSession().getAttribute("userName"));
+		//task.setAssignee((String) req.getSession().getAttribute("userName"));
+		//taskService.complete(task.getId());
 		// 拿到第一个data_1设置申请人
 		String person1 = (String) formMap.get("data_1")[0];
 		Map<String, String> map = new HashMap<String, String>();
-		boolean isLogin = this.isLogin(req);
-		if (isLogin) {
-			if (deploymentId != null) {
-				HttpSession session = req.getSession();
-				String assginee = (String) session.getAttribute("userName");
-				// /////////////////////////////////
-				// String deploymentId = formMap.get("deploymentId");
-				ProcessDefinition pd = repositoryService
-						.createProcessDefinitionQuery()
-						.deploymentId(deploymentId).singleResult();
-				String processDefinitionId = pd.getId();
-				Map<String, String> formProperties = new HashMap<String, String>();
-
-				Iterator<FlowElement> iterator1 = this
-						.findFlow(processDefinitionId);
-				// 取第一个节点，开始节点的行号
-				String row = null;
-				while (iterator1.hasNext()) {
-					FlowElement flowElement = iterator1.next();
-					row = flowElement.getXmlRowNumber() + "";
-					break;
-				}
-
-				// 从request中读取参数然后转换
-				Set<Entry<String, String[]>> entrySet = formMap.entrySet();
-				for (Entry<String, String[]> entry : entrySet) {
-					String key = entry.getKey();
-					String value = entry.getValue()[0];
-					if (!key.equals("deploymentId")) {
-						String keyString = key + row;
-						formProperties.put(keyString, value);
-					}
-				}
-				formProperties.put("deploymentId", deploymentId);
-
-				// //////////////////////////
-
-				Iterator<FlowElement> iterator = this.findFlow(pd.getId());
-				int i = 1;
-				while (iterator.hasNext()) {
-					FlowElement flowElement = iterator.next(); // 申请人
-					if (flowElement.getClass().getSimpleName()
-							.equals("UserTask")
-							&& i == 1) {
-						UserTask userTask = (UserTask) flowElement;
-						String assignee = userTask.getAssignee();
-						int index1 = assignee.indexOf("{");
-						int index2 = assignee.indexOf("}");
-						formProperties
-								.put(assignee.substring(index1 + 1, index2),
-										person1);
-						break;
-					}
-				}
-				identityService.setAuthenticatedUserId(assginee);
-				ProcessInstance processInstance = formService
-						.submitStartFormData(processDefinitionId,
-								formProperties);
-				// ////////////////////////////////////////
-				map.put("userName",
-						(String) req.getSession().getAttribute("userName"));
-				map.put("isLogin", "yes");
-				map.put("result", "success");
-			} else {
-				map.put("result", "fail");
-			}
-		} else {
-			map.put("isLogin", "no");
-		}
+		map.put("userName",
+				(String) req.getSession().getAttribute("userName"));
+		map.put("isLogin", "yes");
+		map.put("result", "success");
+//		boolean isLogin = this.isLogin(req);
+//		if (isLogin) {
+//			if (deploymentId != null) {
+//				HttpSession session = req.getSession();
+//				String assginee = (String) session.getAttribute("userName");
+//				// /////////////////////////////////
+//				// String deploymentId = formMap.get("deploymentId");
+//				ProcessDefinition pd = repositoryService
+//						.createProcessDefinitionQuery()
+//						.deploymentId(deploymentId).singleResult();
+//				String processDefinitionId = pd.getId();
+//				Map<String, String> formProperties = new HashMap<String, String>();
+//
+//				Iterator<FlowElement> iterator1 = this
+//						.findFlow(processDefinitionId);
+//				// 取第一个节点，开始节点的行号
+//				String row = null;
+//				while (iterator1.hasNext()) {
+//					FlowElement flowElement = iterator1.next();
+//					row = flowElement.getXmlRowNumber() + "";
+//					break;
+//				}
+//
+//				// 从request中读取参数然后转换
+//				Set<Entry<String, String[]>> entrySet = formMap.entrySet();
+//				for (Entry<String, String[]> entry : entrySet) {
+//					String key = entry.getKey();
+//					String value = entry.getValue()[0];
+//					if (!key.equals("deploymentId")) {
+//						String keyString = key + row;
+//						formProperties.put(keyString, value);
+//					}
+//				}
+//				formProperties.put("deploymentId", deploymentId);
+//
+//				// //////////////////////////
+//
+//				Iterator<FlowElement> iterator = this.findFlow(pd.getId());
+//				int i = 1;
+//				while (iterator.hasNext()) {
+//					FlowElement flowElement = iterator.next(); // 申请人
+//					if (flowElement.getClass().getSimpleName()
+//							.equals("UserTask")
+//							&& i == 1) {
+//						UserTask userTask = (UserTask) flowElement;
+//						String assignee = userTask.getAssignee();
+//						int index1 = assignee.indexOf("{");
+//						int index2 = assignee.indexOf("}");
+//						formProperties
+//								.put(assignee.substring(index1 + 1, index2),
+//										person1);
+//						break;
+//					}
+//				}
+//				identityService.setAuthenticatedUserId(assginee);
+//				ProcessInstance processInstance = formService
+//						.submitStartFormData(processDefinitionId,
+//								formProperties);
+//				// ////////////////////////////////////////
+//				map.put("userName",
+//						(String) req.getSession().getAttribute("userName"));
+//				map.put("isLogin", "yes");
+//				map.put("result", "success");
+//			} else {
+//				map.put("result", "fail");
+//			}
+//		} else {
+//			map.put("isLogin", "no");
+//		}
 		return map;
 	}
 
@@ -1092,21 +1110,22 @@ public class ActivitiController {
 
 	@RequestMapping(value = "/getStartForm.do", method = RequestMethod.POST, produces = "application/json;charset=utf-8")
 	@ResponseBody
-	public Object getStartForm(@RequestBody String deploymentId) {
+	public Object getStartForm(@RequestBody String procDefId) {
 		Map<String, String> map = new HashMap<String, String>();
-		String deString = null;
-		deString = deploymentId.replaceAll("=", "");
-		String form = this.getStartForm1(deString);
+		String form = null;
+		try {
+			procDefId = URLDecoder.decode(procDefId, "utf-8");
+			procDefId = procDefId.replace("=", "");
+			form = this.getStartForm1(procDefId);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 		map.put("form", form);
 		return map;
 	}
 
-	public String getStartForm1(String deploymentId) {
-		String deString = null;
-		deString = deploymentId.replaceAll("=", "");
-		ProcessDefinition pd = repositoryService.createProcessDefinitionQuery()
-				.deploymentId(deString).singleResult();
-		String form = (String) formService.getRenderedStartForm(pd.getId());
+	public String getStartForm1(String procDefId) {
+		String form = (String) formService.getRenderedStartForm(procDefId);
 		return form;
 	}
 

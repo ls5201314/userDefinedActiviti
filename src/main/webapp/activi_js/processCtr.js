@@ -21,7 +21,7 @@ $scope.init=function(){
     			height: $.common.window.getClientHeight() * 0.9,	
     			open: function() {
     				// 获取json格式的表单数据，就是流程定义中的所有field
-    				readForm.call(this, process.deploymentId);
+    				readForm.call(this, process.id);
     			},
     			buttons: [{
     				text: '启动流程',
@@ -44,12 +44,13 @@ $scope.init=function(){
 ;
     	};
     	//读取流程启动表单
-    	function readForm(deploymentId) {
+    	function readForm(procDefId) {
     		var dialog = this;
     		// 读取启动时的表单
-    		$.post('./getStartForm.do',deploymentId, function(result) {
+            console.log("out:", procDefId);
+    		$.post('./getStartForm.do',procDefId, function(result) {
     			// 获取的form是字符行，html格式直接显示在对话框内就可以了，然后用form包裹起来
-    			
+    			console.log("procDefId:", procDefId);
     			$(dialog).append("<div class='formContent' />");
     			$('.formContent').html('').wrap("<form id='startform' class='formkey-form' method='post' />");
     			
@@ -58,14 +59,16 @@ $scope.init=function(){
     			// 设置表单action    getStartFormAndStartProcess
     			$form.attr('action', './getStartFormAndStartProcess');
     			//设置部署的Id
-    			$form.append("<input type='hidden' name='deploymentId' value="+deploymentId+">");
+    			//$form.append("<input type='hidden' name='deploymentId' value="+deploymentId+">");
+                $form.append("<input type='text' name='procDefId' value="+procDefId+">");
     			$form.append(result.form);
     			// 初始化日期组件
-    			$form.find('.datetime').datetimepicker({
+    			/*$form.find('.datetime').datetimepicker({
     		           stepMinute: 5
     		     });
-    			$form.find('.date').datepicker();
-    			
+    			$form.find('.date').datepicker();*/
+
+                console.log("$form:", $form);
     			// 表单验证
     			$form.validate($.extend({}, $.common.plugin.validator));
     		});
@@ -76,14 +79,14 @@ $scope.init=function(){
     	 * @return {[type]} [description]
     	 */
     	function sendStartupRequest() {
-    		if ($(".formkey-form").valid()) {
+    		//if ($(".formkey-form").valid()) {
     			var url = './getStartFormAndStartProcess.do';
     			var args = $('#startform').serialize();
     			$.post(url, args, function(data){
     				$("#handleTemplate").dialog("close");
 					$location.path("/findFirstTask");
     			});
-    		}
+    		//}
     	}
       
   
